@@ -5,3 +5,4 @@ ibm-watsonx-ai
 pyngrok
 requests
 botocore
+python-dotenv
