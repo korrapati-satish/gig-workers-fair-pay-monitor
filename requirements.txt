@@ -1,0 +1,7 @@
+flask
+pandas
+numpy
+ibm-watsonx-ai
+pyngrok
+requests
+botocore
