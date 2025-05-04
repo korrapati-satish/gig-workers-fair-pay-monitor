@@ -1,0 +1,21 @@
+<resources>
+    <string name="app_name">GigFlow</string>
+    <string name="action_settings">Settings</string>
+    <!-- Strings used for fragments for navigation -->
+    <string name="first_fragment_label">GigFlow</string>
+    <string name="second_fragment_label">Earning Forecast</string>
+    <string name="third_fragment_label">Chat with GigFlow</string>
+    <string name="next">Upload Current Week Pay</string>
+    <string name="chat_first">Chat with GigFlow</string>
+    <string name="previous">Forecast Your Pay</string>
+
+    <string name="lorem_ipsum">
+        Forecast Your Earnings on single click
+    </string>
+
+    <string name="upload_success">
+       Reports have been uploaded successfully
+    </string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+</resources>
