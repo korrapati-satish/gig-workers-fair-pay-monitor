@@ -55,12 +55,16 @@ public class SecondFragment extends Fragment {
 //        );
 
         // Launch file picker on click
-        binding.buttonSecond.setOnClickListener(v -> {
-            Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
-            intent.setType("test/csv");
-            intent.addCategory(Intent.CATEGORY_OPENABLE);
-            filePickerLauncher.launch(Intent.createChooser(intent, "Select CSV File"));
-        });
+        binding.registerButton.setOnClickListener(v ->
+
+                {
+                    Toast.makeText(requireContext(), "Registration Successful", Toast.LENGTH_SHORT).show();
+                    NavHostFragment.findNavController(SecondFragment.this)
+                            .navigate(R.id.action_SecondFragment_to_FirstFragment);
+                }
+
+
+        );
     }
 
     private void readCsvFromUri(Uri uri) {

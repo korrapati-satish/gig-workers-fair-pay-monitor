@@ -3,15 +3,20 @@
     <string name="action_settings">Settings</string>
     <!-- Strings used for fragments for navigation -->
     <string name="first_fragment_label">GigFlow</string>
-    <string name="second_fragment_label">Earning Forecast</string>
+    <string name="second_fragment_label">Gigflow Registration</string>
     <string name="third_fragment_label">Chat with GigFlow</string>
-    <string name="next">Upload Current Week Pay</string>
+    <string name="next">Upload Weekly Pay</string>
     <string name="chat_first">Chat with GigFlow</string>
     <string name="previous">Forecast Your Pay</string>
 
     <string name="lorem_ipsum">
         Forecast Your Earnings on single click
     </string>
+
+    <string name="lineChartTitle">
+        Compare the Current Month Gross Pay
+    </string>
+
 
     <string name="upload_success">
        Reports have been uploaded successfully
