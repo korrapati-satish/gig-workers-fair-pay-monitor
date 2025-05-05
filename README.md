@@ -190,7 +190,7 @@ cos_client = ibm_boto3.client(
 ### 4. 🚀 Start the Flask Server
 
 ```bash
-python app.py
+flask run
 ```
 
 Backend will be available at:  
