@@ -12,6 +12,13 @@ import requests
 import json
 from botocore.client import Config
 import ibm_boto3
+import io
+import logging
+# ----------------------------
+# Logging Setup
+# ----------------------------
+logging.basicConfig(level=logging.INFO, format='[%(asctime)s] %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 
 
@@ -109,6 +116,7 @@ app = Flask(__name__)
 # Define IBM Watson X AI credentials
 IAM_API_KEY = "h3UwMhi8G5pgenC6s_QWVUXEGXmWTlh4bPfycOT6NjqY"
 project_id = "f60f72fa-e445-4de8-922b-b22bf2cff40f"
+logger.info("Initializing IBM WatsonX credentials...")
 
 # Set up credentials
 creds = Credentials(
@@ -117,7 +125,7 @@ creds = Credentials(
 )
 
 # Initialize model inference
-
+logger.info("Initializing Time Series Forecasting Model...")
 tst = TSModelInference(
     model_id="ibm/granite-ttm-512-96-r2",
     credentials=creds,
@@ -126,6 +134,7 @@ tst = TSModelInference(
 
 def get_params(input_length):
 # Define forecast parameters
+    logger.info(f"Creating forecast parameters for input length: {input_length}")
     params = TSForecastParameters(
         timestamp_column="week_start",
         prediction_length=input_length,
@@ -136,20 +145,23 @@ def get_params(input_length):
     return params
 
 # Load data from IBM COS
-
-# cos_client = ibm_boto3.client(service_name='s3',
-#                                 ibm_api_key_id='LH5kp4cMyNvSjd0B8nuCQtcvLSManSoijLA9RytKXSdH',
-#                                 ibm_auth_endpoint="https://iam.cloud.ibm.com/identity/token",
-#                                 config=Config(signature_version='oauth',connect_timeout=600, read_timeout=600),
-#                                 endpoint_url='https://s3.direct.us-south.cloud-object-storage.appdomain.cloud')
+logger.info("Setting up IBM COS client...")
+cos_client = ibm_boto3.client(service_name='s3',
+                                ibm_api_key_id='LH5kp4cMyNvSjd0B8nuCQtcvLSManSoijLA9RytKXSdH',
+                                ibm_auth_endpoint="https://iam.cloud.ibm.com/identity/token",
+                                config=Config(signature_version='oauth', retries={'max_attempts': 10},connect_timeout=300, read_timeout=300),
+                                endpoint_url='https://s3.direct.us-south.cloud-object-storage.appdomain.cloud')
+# df_combined = pd.read_json(io.BytesIO(body.read()), orient='records')
 # body = cos_client.get_object(Bucket='gig-workers-fair-pay-monitor', Key='combined_gig_worker_data.json')['Body']
 # df_combined = pd.read_json(body, orient='records')
+logger.info("Loading combined data from Petrol Dataset, Weather Dataset, Gig Worker Data JSON...")
 df_combined = pd.read_json('combined_gig_worker_data.json', orient='records')
 df_combined["week_start"] = pd.to_datetime(df_combined["week_start"])
 df_combined = df_combined[df_combined["gross_pay"].notna()].sort_values(by="week_start")
-
+logger.info(f"Combined dataset loaded: {len(df_combined)} records")
 
 def data_dict_compute(df):
+    logger.info(f"Converting dataframe to dictionary format with {len(df)} rows")
     data_dict = df.copy()
     data_dict["week_start"] = data_dict["week_start"].dt.strftime("%Y-%m-%d")
     data_dict = data_dict.to_dict(orient="list")
@@ -159,29 +171,36 @@ def data_dict_compute(df):
 
 @app.route('/user_data_comparision_for_provided_week', methods=['POST'])
 def user_data_comparision_for_provided_week():
+    logger.info("Received request at /user_data_comparision_for_provided_week")
     user_df = pd.DataFrame(request.get_json())
     user_df["week_start"] = pd.to_datetime(user_df["week_start"])
+    logger.info(f"User data received with {len(user_df)} records")
     user_df = user_df[user_df["gross_pay"].notna()].sort_values(by="week_start")
     oldest_date = user_df["week_start"].min()
     filtered_df = df_combined[df_combined["week_start"] < oldest_date]
     data_dict_past  = data_dict_compute(filtered_df)
     params = get_params(len(user_df))
+    logger.info("Sending data to model for forecasting (comparison)...")
     forecast = tst.forecast(data=data_dict_past, params=params)
     forecast_df = pd.DataFrame(forecast['results'][0])
+    logger.info("Forecasting complete. Filtering result for matching city and platform.")
     forecast_df = forecast_df[
     (forecast_df["city"] == user_df['city'].unique()[0]) &
     (forecast_df["platform"] == user_df['platform'].unique()[0])]    
+    logger.info(f"Returning {len(forecast_df)} forecasted records to user.")
     return jsonify(forecast_df.to_dict(orient='records'))
 
 @app.route('/user_data_next_week_forcast', methods=['POST'])
 def user_data_next_week_forcast():
+    logger.info("Received request at /user_data_next_week_forcast")
     user_df = pd.DataFrame(request.get_json())
     user_df["week_start"] = pd.to_datetime(user_df["week_start"])
     user_df = user_df[user_df["gross_pay"].notna()].sort_values(by="week_start")
-
+    logger.info(f"User data contains {len(user_df)} records")
     # Split user data
     actual_df = user_df.tail(7).copy()
     training_df = user_df.iloc[:-7].copy()
+    logger.info(f"Split into training ({len(training_df)}) and actual ({len(actual_df)}) data")
 
     df_combined["week_start"] = pd.to_datetime(df_combined["week_start"])
     actual_df["week_start"] = pd.to_datetime(actual_df["week_start"])
@@ -193,14 +212,15 @@ def user_data_next_week_forcast():
 
     # Perform forecasting
     params = get_params(len(user_df))
+    logger.info("Sending combined historical and training data to model for future forecasting...")
     forecast = tst.forecast(data=data_dict_future, params=params)
     forecast_df = pd.DataFrame(forecast['results'][0])
-
+    logger.info(f"Model forecasted {len(forecast_df)} records. Returning to client.")
     return jsonify(forecast_df.to_dict(orient='records'))
 
 if __name__ == "__main__":
     # data_generate()
-    ngrok.set_auth_token("2wcasOHhuwchRDpqv4lHNoECAes_4Gj93pGvbvrWojekAbmBw")
-    http_tunnel = ngrok.connect(8000)
-    print(f'ngrok tunnel: {http_tunnel.public_url}')
-    app.run(host='0.0.0.0',port=8000,debug=True)
+    # ngrok.set_auth_token("2wcasOHhuwchRDpqv4lHNoECAes_4Gj93pGvbvrWojekAbmBw")
+    # http_tunnel = ngrok.connect(8000)
+    # print(f'ngrok tunnel: {http_tunnel.public_url}')
+    app.run(host="0.0.0.0", debug=True, port=8532)
