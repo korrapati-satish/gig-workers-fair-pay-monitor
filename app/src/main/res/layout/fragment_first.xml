@@ -12,75 +12,81 @@
         android:layout_height="wrap_content"
         android:padding="16dp">
 
-        <!-- TextView at the top as Title -->
+        <!-- 1. GigFlow Registration Button -->
+        <Button
+            android:id="@+id/register_button"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="GigFlow Registration"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
 
-        <!-- ImageView below the Title -->
+        <!-- 2. Future Button -->
 
-        <!-- Button First below Image -->
+        <!-- 3. Title Text -->
+
         <TextView
             android:id="@+id/textview_first"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="60dp"
-            android:gravity="center"
             android:text="@string/lorem_ipsum"
             android:textSize="20sp"
             android:textStyle="bold"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="0.484"
+            android:gravity="center"
+            app:layout_constraintTop_toBottomOf="@id/future_button"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="16dp" />
 
+        <!-- 4. Image -->
         <ImageView
             android:id="@+id/imageView"
-            android:layout_width="368dp"
+            android:layout_width="0dp"
             android:layout_height="115dp"
-            android:layout_marginTop="12dp"
-            android:contentDescription="Gig Flow"
             android:src="@drawable/img"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="1.0"
+            android:contentDescription="Gig Flow"
+            app:layout_constraintTop_toBottomOf="@id/textview_first"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/textview_first" />
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="16dp" />
 
-        <!-- Add margin to space out buttons -->
+        <!-- 5. Buttons: Next and Chat -->
 
-        <!-- Chat First Button next to Button -->
         <Button
             android:id="@+id/button_first"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
+            android:layout_marginTop="60dp"
             android:layout_marginEnd="8dp"
             android:text="@string/next"
             app:layout_constraintEnd_toStartOf="@id/chat_first"
-            app:layout_constraintHorizontal_bias="0.5"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/imageView" />
 
         <Button
             android:id="@+id/chat_first"
             android:layout_width="0dp"
-            android:visibility="gone"
             android:layout_height="wrap_content"
             android:text="@string/chat_first"
-            android:drawablePadding="8dp"
             android:backgroundTint="@color/purple_700"
+            android:visibility="gone"
             app:layout_constraintTop_toBottomOf="@id/imageView"
             app:layout_constraintStart_toEndOf="@id/button_first"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="0.5" />
+            android:layout_marginTop="16dp" />
 
-        <!-- Table Layout below Chat Button -->
+        <!-- 6. Table Layout -->
 
-        <!-- Line Chart below Table -->
+        <!-- 7. Chart Title 1 -->
 
+        <!-- 8. Line Chart -->
 
         <TableLayout
             android:id="@+id/table_layout"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="68dp"
+            android:layout_marginTop="120dp"
             android:paddingTop="16dp"
             android:stretchColumns="1"
             app:layout_constraintEnd_toEndOf="parent"
@@ -88,10 +94,7 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/chat_first">
 
-            <!-- Table Row 1 -->
-            <TableRow
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content">
+            <TableRow>
 
                 <TextView
                     android:layout_width="0dp"
@@ -108,10 +111,8 @@
                     android:layout_weight="1"
                     android:background="@android:color/darker_gray"
                     android:padding="8dp"
-                    android:text="Current"
-                    android:textColor="@android:color/white"
-                    tools:layout_editor_absoluteX="147dp"
-                    tools:layout_editor_absoluteY="302dp" />
+                    android:text="Actual Pay"
+                    android:textColor="@android:color/white" />
 
                 <TextView
                     android:layout_width="0dp"
@@ -119,35 +120,18 @@
                     android:layout_weight="1"
                     android:background="@android:color/holo_purple"
                     android:padding="8dp"
-                    android:text="Forecast"
+                    android:text="Expected Pay"
                     android:textColor="@android:color/white" />
-
-
             </TableRow>
-
         </TableLayout>
 
         <TextView
             android:id="@+id/chart_title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="40dp"
+            android:layout_marginTop="72dp"
             android:gravity="center"
             android:text="Weekly Earnings Overview"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="0.535"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/table_layout" />
-
-        <TextView
-            android:id="@+id/chart_title2"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="380dp"
-            android:gravity="center"
-            android:text="Weekly Revenue Overview"
             android:textSize="18sp"
             android:textStyle="bold"
             app:layout_constraintEnd_toEndOf="parent"
@@ -156,33 +140,48 @@
 
         <com.github.mikephil.charting.charts.LineChart
             android:id="@+id/lineChart"
-            android:layout_width="384dp"
-            android:layout_height="294dp"
-            android:layout_marginTop="76dp"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="0.0"
+            android:layout_width="0dp"
+            android:layout_height="300dp"
+            app:layout_constraintTop_toBottomOf="@id/chart_title"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/table_layout" />
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="8dp" />
 
-        <com.github.mikephil.charting.charts.BarChart
-            android:id="@+id/barChart"
-            android:layout_width="384dp"
-            android:layout_height="294dp"
-            android:layout_marginTop="32dp"
+        <!-- 9. Chart Title 2 -->
+        <TextView
+            android:id="@+id/chart_title2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Weekly Revenue Overview"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:gravity="center"
             app:layout_constraintTop_toBottomOf="@id/lineChart"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="0.0" />
+            android:layout_marginTop="24dp" />
 
+        <!-- 10. Bar Chart -->
 
         <Button
-            android:id="@+id/register_button"
-            android:layout_width="380dp"
-            android:layout_height="45dp"
-            android:text="GigFlow Registration"
-            tools:layout_editor_absoluteX="-1dp"
-            tools:layout_editor_absoluteY="8dp" />
+            android:id="@+id/future_button"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:text="Future Gross Pay Earning"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.0"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/register_button" />
+
+        <com.github.mikephil.charting.charts.BarChart
+            android:id="@+id/barChart"
+            android:layout_width="0dp"
+            android:layout_height="300dp"
+            app:layout_constraintTop_toBottomOf="@id/chart_title2"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="8dp" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
-
 </androidx.core.widget.NestedScrollView>

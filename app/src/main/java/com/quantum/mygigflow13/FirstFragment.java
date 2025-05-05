@@ -1,6 +1,5 @@
 package com.quantum.mygigflow13;
 
-import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.util.Log;
@@ -14,7 +13,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
-import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.fragment.NavHostFragment;
 
@@ -29,13 +27,14 @@ import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
 import com.github.mikephil.charting.formatter.ValueFormatter;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import com.quantum.mygigflow13.databinding.FragmentFirstBinding;
-import com.quantum.mygigflow13.model.Message;
-
-import org.json.JSONArray;
-import org.json.JSONObject;
+import com.quantum.mygigflow13.model.PayComparison;
+import com.quantum.mygigflow13.model.PayRecord;
 
 import java.io.OutputStream;
+import java.lang.reflect.Type;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
@@ -69,16 +68,7 @@ public class FirstFragment extends Fragment {
 
         binding.buttonFirst.setOnClickListener(v ->
                 {
-                    Toast.makeText(requireContext(), "Processing your data", Toast.LENGTH_SHORT).show();
-                    try {
-                        Thread.sleep(1000l);
-                    } catch (InterruptedException e) {
-                        throw new RuntimeException(e);
-                    }
-
-                    showWeeklyForecastLineGraph();
-
-                    showWeeklyForecastBarGraph();
+                    Toast.makeText(requireContext(), "Sending data to IBM Watsonx API for processing", Toast.LENGTH_SHORT).show();
 
                     sendRequestLoadResults();
 
@@ -93,9 +83,17 @@ public class FirstFragment extends Fragment {
                             .navigate(R.id.action_FirstFragment_to_SecondFragment);
                 }
         );
+
+
+        binding.futureButton.setOnClickListener(v -> {
+                    NavHostFragment.findNavController(FirstFragment.this)
+                            .navigate(R.id.action_FirstFragment_to_ThirdFragment);
+                }
+        );
+
     }
 
-    private void showWeeklyForecastBarGraph() {
+    private void showWeeklyExpectedBarGraph(List<PayComparison> payComparisonList) {
 
         View view =  binding.getRoot();
 
@@ -103,11 +101,13 @@ public class FirstFragment extends Fragment {
 
 // Prepare data
         ArrayList<BarEntry> barEntries = new ArrayList<>();
-        barEntries.add(new BarEntry(1f, 4852.01f)); // Week 1
-        barEntries.add(new BarEntry(2f, 4873.44f)); // Week 2
-        barEntries.add(new BarEntry(3f, 4627.27f)); // Week 3
-        barEntries.add(new BarEntry(4f, 4508.33f)); // Week 4
-        barEntries.add(new BarEntry(5f, 4750.58f)); // Week 5
+
+        for (int i = 0; i < payComparisonList.size(); i++) {
+            PayComparison comparison = payComparisonList.get(i);
+            float weekIndex = i + 1f; // X-axis value (Week 1, Week 2, ...)
+            float currentGrossPay = (float) comparison.getCurrentGrossPay(); // Ensure type cast to float
+            barEntries.add(new BarEntry(weekIndex, currentGrossPay));
+        }
 
 // Create dataset
         BarDataSet barDataSet = new BarDataSet(barEntries, "Weekly Revenue");
@@ -134,10 +134,20 @@ public class FirstFragment extends Fragment {
         xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
         xAxis.setGranularity(1f); // one label per week
         xAxis.setDrawGridLines(false);
+
+        List<String> weekLabels = new ArrayList<>();
+        for (PayComparison comparison : payComparisonList) {
+            weekLabels.add(comparison.getWeekStart());
+        }
         xAxis.setValueFormatter(new ValueFormatter() {
             @Override
             public String getFormattedValue(float value) {
-                return "Week " + (int) value;
+                int index = (int) value - 1;
+                if (index >= 0 && index < weekLabels.size()) {
+                    return weekLabels.get(index);
+                } else {
+                    return "";
+                }
             }
         });
 
@@ -148,7 +158,7 @@ public class FirstFragment extends Fragment {
 
     }
 
-    private void showWeeklyForecastLineGraph() {
+    private void showWeeklyExpectedLineGraph(List<PayComparison> payComparisonList) {
 
         View view =  binding.getRoot();
 
@@ -158,50 +168,19 @@ public class FirstFragment extends Fragment {
             return;
         }
 
-       /* // 1. Create data entries
-        List<Entry> entries = new ArrayList<>();
-        entries.add(new Entry(0f, 2f));
-        entries.add(new Entry(1f, 4f));
-        entries.add(new Entry(2f, 1f));
-        entries.add(new Entry(3f, 7f));
-        entries.add(new Entry(4f, 3f));
-
-        // 2. Create dataset
-        LineDataSet dataSet = new LineDataSet(entries, "Sample Data");
-        dataSet.setColor(Color.BLUE);
-        dataSet.setLineWidth(2f);
-        dataSet.setValueTextColor(Color.BLACK);
-        dataSet.setCircleColor(Color.RED);  // Optional: set point color
-        dataSet.setCircleRadius(4f);        // Optional: set point size
-
-        // 3. Create LineData and set to chart
-        LineData lineData = new LineData(dataSet);
-        lineChart.setData(lineData);
-
-        // 4. Customize chart appearance
-        lineChart.getDescription().setText("Line Chart Example");
-        lineChart.getXAxis().setPosition(XAxis.XAxisPosition.BOTTOM);
-        lineChart.getAxisRight().setEnabled(false); // Hide right y-axis
-
-        // 5. Refresh chart
-        lineChart.invalidate(); // Refresh the chart with new data*/
 
         lineChart = view.findViewById(R.id.lineChart);
 
-        // Prepare data for current vs forecast
         ArrayList<Entry> currentData = new ArrayList<>();
-        currentData.add(new Entry(1f, 4852.01f)); // Day 1, Current value
-        currentData.add(new Entry(2f, 4873.44f)); // Day 2, Current value
-        currentData.add(new Entry(3f, 4627.27f)); // Day 3, Current value
-        currentData.add(new Entry(4f, 4508.33f)); // Day 4, Current value
-        currentData.add(new Entry(5f, 4750.58f)); // Day 3, Current value
+        ArrayList<Entry> expectedData = new ArrayList<>();
 
-        ArrayList<Entry> forecastData = new ArrayList<>();
-        forecastData.add(new Entry(1f, 4969.27f)); // Day 1, Forecast value
-        forecastData.add(new Entry(2f, 4948.22f)); // Day 2, Forecast value
-        forecastData.add(new Entry(3f, 4945.72f)); // Day 3, Forecast value
-        forecastData.add(new Entry(4f, 5050.99f)); // Day 4, Forecast value
-        forecastData.add(new Entry(5f, 5200.88f)); // Day 3, Current value
+        for (int i = 0; i < payComparisonList.size(); i++) {
+            PayComparison comparison = payComparisonList.get(i);
+            float xValue = i + 1; // Entry x-axis (e.g., Day 1, 2, 3...)
+
+            currentData.add(new Entry(xValue, (float) comparison.getCurrentGrossPay()));
+            expectedData.add(new Entry(xValue, (float) comparison.getExpectedGrossPay()));
+        }
 
         // Create LineDataSet for the current data
         LineDataSet currentLineDataSet = new LineDataSet(currentData, "Current Month Actual Gross Pay");
@@ -211,7 +190,7 @@ public class FirstFragment extends Fragment {
         currentLineDataSet.setLineWidth(2f);
 
         // Create LineDataSet for the forecast data
-        LineDataSet forecastLineDataSet = new LineDataSet(forecastData, " Current Month Forecasted Gross Pay");
+        LineDataSet forecastLineDataSet = new LineDataSet(expectedData, " Current Month Expected Gross Pay");
         forecastLineDataSet.setColor(getResources().getColor(R.color.colorAccent));
         forecastLineDataSet.setValueTextColor(getResources().getColor(R.color.colorAccent));
         forecastLineDataSet.setDrawValues(true);
@@ -234,10 +213,24 @@ public class FirstFragment extends Fragment {
         XAxis xAxis = lineChart.getXAxis();
         xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
         xAxis.setGranularity(1f); // Set granularity to 1 to display one data point per unit
+
+        List<String> weekLabels = new ArrayList<>();
+        for (PayComparison comparison : payComparisonList) {
+            weekLabels.add(comparison.getWeekStart());
+        }
+
+
         xAxis.setValueFormatter(new ValueFormatter() {
             @Override
             public String getFormattedValue(float value) {
-                return "Week " + (int) value; // Format X Axis as Day 1, Day 2, etc.
+                //return "Week " + (int) value; // Format X Axis as Day 1, Day 2, etc.
+
+                int index = (int) value - 1;
+                if (index >= 0 && index < weekLabels.size()) {
+                    return weekLabels.get(index);
+                } else {
+                    return "";
+                }
             }
         });
 
@@ -258,17 +251,91 @@ public class FirstFragment extends Fragment {
         // TODO: send request to load results
         new Thread(() -> {
             try {
-                URL url = new URL("https://httpbin.org/post");
+                URL url = new URL("http://192.168.1.35:8532/user_data_comparision_for_provided_week");
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                 conn.setRequestMethod("POST");
                 conn.setDoOutput(true);
                 conn.setRequestProperty("Content-Type", "application/json");
 
                 // JSON payload
-                String json = "[\n" +
-                        "    { \"current\": [10,11,12,34,56,77] },\n" +
-                        "    { \"forecastedGrossPay\": [11,12,13,25,57,78] }\n" +
+                String json = " [\n" +
+                        "  {\n" +
+                        "    \"week_number\": 0,\n" +
+                        "    \"city\": \"Mumbai\",\n" +
+                        "    \"platform\": \"Uber\",\n" +
+                        "    \"week_start\": \"2025-05-04\",\n" +
+                        "    \"hours_worked\": 30.9,\n" +
+                        "    \"gross_pay\": 4750.58,\n" +
+                        "    \"tips\": 520.9,\n" +
+                        "    \"platform_fee\": 725.65,\n" +
+                        "    \"petrol_price\": 113.25,\n" +
+                        "    \"petrol_price_idx\": 1.298,\n" +
+                        "    \"cpi\": 153.38,\n" +
+                        "    \"holiday_flag\": 1,\n" +
+                        "    \"weather_idx_input\": 1.44,\n" +
+                        "    \"temperature\": 39.4,\n" +
+                        "    \"humidity\": 64.7,\n" +
+                        "    \"rainfall\": 42.9\n" +
+                        "  },\n" +
+                        "  {\n" +
+                        "    \"week_number\": 1,\n" +
+                        "    \"city\": \"Mumbai\",\n" +
+                        "    \"platform\": \"Uber\",\n" +
+                        "    \"week_start\": \"2025-04-27\",\n" +
+                        "    \"hours_worked\": 46.1,\n" +
+                        "    \"gross_pay\": 4508.33,\n" +
+                        "    \"tips\": 387.94,\n" +
+                        "    \"platform_fee\": 926.85,\n" +
+                        "    \"petrol_price\": 116.04,\n" +
+                        "    \"petrol_price_idx\": 1.292,\n" +
+                        "    \"cpi\": 159.88,\n" +
+                        "    \"holiday_flag\": 1,\n" +
+                        "    \"weather_idx_input\": 1.45,\n" +
+                        "    \"temperature\": 38.7,\n" +
+                        "    \"humidity\": 60.6,\n" +
+                        "    \"rainfall\": 68.7\n" +
+                        "  },\n" +
+                        "  {\n" +
+                        "    \"week_number\": 2,\n" +
+                        "    \"city\": \"Mumbai\",\n" +
+                        "    \"platform\": \"Uber\",\n" +
+                        "    \"week_start\": \"2025-04-20\",\n" +
+                        "    \"hours_worked\": 33.4,\n" +
+                        "    \"gross_pay\": 4627.27,\n" +
+                        "    \"tips\": 808.54,\n" +
+                        "    \"platform_fee\": 756.28,\n" +
+                        "    \"petrol_price\": 112.18,\n" +
+                        "    \"petrol_price_idx\": 1.381,\n" +
+                        "    \"cpi\": 154.23,\n" +
+                        "    \"holiday_flag\": 1,\n" +
+                        "    \"weather_idx_input\": 1.09,\n" +
+                        "    \"temperature\": 31.1,\n" +
+                        "    \"humidity\": 80.5,\n" +
+                        "    \"rainfall\": 29.8\n" +
+                        "  },\n" +
+                        "  {\n" +
+                        "    \"week_number\": 3,\n" +
+                        "    \"city\": \"Mumbai\",\n" +
+                        "    \"platform\": \"Uber\",\n" +
+                        "    \"week_start\": \"2025-04-13\",\n" +
+                        "    \"hours_worked\": 48.1,\n" +
+                        "    \"gross_pay\": 4873.44,\n" +
+                        "    \"tips\": 885.35,\n" +
+                        "    \"platform_fee\": 888.5,\n" +
+                        "    \"petrol_price\": 112.4,\n" +
+                        "    \"petrol_price_idx\": 1.412,\n" +
+                        "    \"cpi\": 157.75,\n" +
+                        "    \"holiday_flag\": 1,\n" +
+                        "    \"weather_idx_input\": 1.42,\n" +
+                        "    \"temperature\": 32.1,\n" +
+                        "    \"humidity\": 87.8,\n" +
+                        "    \"rainfall\": 92.5\n" +
+                        "  }\n" +
                         "]";
+
+                Gson gson = new Gson();
+                Type listType = new TypeToken<List<PayRecord>>(){}.getType();
+                List<PayRecord> inputPayRecords = gson.fromJson(json, listType);
 
                 OutputStream os = conn.getOutputStream();
                 os.write(json.getBytes("utf-8"));
@@ -281,40 +348,39 @@ public class FirstFragment extends Fragment {
                 }
                 scanner.close();
 
-                try {
-                    // Parse the response
-                    JSONObject responseJson = new JSONObject(String.valueOf(response));
-                    JSONArray jsonData = responseJson.getJSONArray("json");
 
-                    // Extract the arrays for current and forecasted gross pay
-                    JSONArray currentArray = jsonData.getJSONObject(0).getJSONArray("current");
-                    JSONArray forecastedArray = jsonData.getJSONObject(1).getJSONArray("forecastedGrossPay");
 
-                    // Prepare the result list to store pairs
-                    List<String> result = new ArrayList<>();
 
-                    // Loop through the arrays and combine the values in pairs
-                    for (int i = 0; i < Math.min(currentArray.length(), forecastedArray.length()); i++) {
-                        int current = currentArray.getInt(i);
-                        int forecasted = forecastedArray.getInt(i);
-                        result.add("{" + current + ", " + forecasted + "}");
-                    }
+                Gson gsonResp = new Gson();
+                Type listTypeResp = new TypeToken<ArrayList<PayRecord>>() {}.getType();
+                List<PayRecord> payRecordsResp = gsonResp.fromJson(String.valueOf(response), listTypeResp);
 
-                    // Print the result
-                    System.out.println("Formatted Output:");
-                    for (String pair : result) {
-                        System.out.println(pair);
-                    }
+                List<PayComparison> comparisonList = new ArrayList<>();
 
-                    if (getActivity() != null) {
-                        getActivity().runOnUiThread(() -> {
-                            renderDataInUi(result);
-                        });
-                    }
+                for (int i = 0; i < inputPayRecords.size(); i++) {
+                    PayRecord input = inputPayRecords.get(i);
+                    PayRecord output = payRecordsResp.get(i);
 
-                } catch (Exception e) {
-                    e.printStackTrace();
+                    PayComparison pc = new PayComparison(
+                            input.getWeek_start(),  // from input
+                            input.getCity(),
+                            input.getPlatform(),
+                            input.getGross_pay(),   // current
+                            output.getGross_pay()   // expected
+                    );
+
+                    comparisonList.add(pc);
                 }
+
+
+                if (getActivity() != null) {
+                    getActivity().runOnUiThread(() -> {
+                        renderDataInUi(comparisonList);
+                        showWeeklyExpectedLineGraph(comparisonList);
+                        showWeeklyExpectedBarGraph(comparisonList);
+                    });
+                }
+
             } catch (Exception e) {
                e.printStackTrace();
             }
@@ -323,59 +389,39 @@ public class FirstFragment extends Fragment {
 
     }
 
-    private void renderDataInUi(List<String> result) {
+    private void renderDataInUi(List<PayComparison> payComparisonList) {
 
-        System.out.println(result);
+        System.out.println(payComparisonList);
 
         if (tableLayout.getChildCount() > 1) {
             tableLayout.removeViews(1, tableLayout.getChildCount() - 1);
         }
 
-        // Example data to populate the table
-        String[][] tableData = new String[result.size()][3];
-
-        for (int i = 0; i < result.size(); i++) {
-            String row = result.get(i).replaceAll("[{} ]", ""); // remove braces and spaces
-            String[] parts = row.split(",");
-            tableData[i][0] = "2025-04-06";
-            tableData[i][1] = parts[0];
-            tableData[i][2] = parts[1];
-        }
-
-        tableData = new String[][]{
-                {"2025-04-06", "4852.01", "4969.27"},
-                {"2025-04-13", "4873.44", "4948.22"},
-                {"2025-04-20", "4627.27", "4945.72"},
-                {"2025-04-27", "4508.33", "5050.99"},
-                {"2025-05-04", "4750.58", "5200.88"}
-        };
-        // Loop through the data and add it to the TableLayout
-        for (String[] rowData : tableData) {
-            // Create a new TableRow for each row
+        for (PayComparison comparison : payComparisonList) {
             TableRow row = new TableRow(getContext());
 
-            // Loop through each column in the row
+            String[] rowData = new String[]{
+                    comparison.getWeekStart(),
+                    String.format("%.2f", comparison.getCurrentGrossPay()),
+                    String.format("%.2f", comparison.getExpectedGrossPay())
+            };
+
             for (String cellData : rowData) {
                 TextView cell = new TextView(getContext());
                 cell.setText(cellData);
-
-                // Set text alignment to center and make it bold
                 cell.setGravity(Gravity.CENTER);
                 cell.setTypeface(null, Typeface.BOLD);
 
-                // Set padding (8dp converted to pixels)
                 int paddingInDp = 8;
                 float scale = getResources().getDisplayMetrics().density;
                 int paddingInPx = (int) (paddingInDp * scale + 0.5f);
                 cell.setPadding(paddingInPx, paddingInPx, paddingInPx, paddingInPx);
 
-                // Match the XML styling: equal column width with weight
                 cell.setLayoutParams(new TableRow.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
 
                 row.addView(cell);
             }
 
-            // Add the TableRow to the TableLayout
             tableLayout.addView(row);
         }
     }

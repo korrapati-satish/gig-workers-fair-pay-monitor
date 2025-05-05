@@ -9,6 +9,8 @@ constraintlayout = "2.2.1"
 navigationFragment = "2.8.9"
 navigationUi = "2.8.9"
 mpandroidChart = "v3.1.0"
+gson = "2.10.1"
+cardview= "1.0.0"
 
 [libraries]
 junit = { group = "junit", name = "junit", version.ref = "junit" }
@@ -20,6 +22,9 @@ constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayo
 navigation-fragment = { group = "androidx.navigation", name = "navigation-fragment", version.ref = "navigationFragment" }
 navigation-ui = { group = "androidx.navigation", name = "navigation-ui", version.ref = "navigationUi" }
 mpandroid-chart = { group = "com.github.PhilJay", name = "MPAndroidChart", version.ref = "mpandroidChart" }
+googlecode_gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
+androidx_cardview = { group = "androidx.cardview", name = "cardview", version.ref = "cardview" }
+
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

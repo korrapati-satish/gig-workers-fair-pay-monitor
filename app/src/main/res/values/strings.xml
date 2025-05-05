@@ -4,8 +4,8 @@
     <!-- Strings used for fragments for navigation -->
     <string name="first_fragment_label">GigFlow</string>
     <string name="second_fragment_label">Gigflow Registration</string>
-    <string name="third_fragment_label">Chat with GigFlow</string>
-    <string name="next">Upload Weekly Pay</string>
+    <string name="third_fragment_label">Forecast Your Pay</string>
+    <string name="next">Upload Your Weekly Pay of Current Month</string>
     <string name="chat_first">Chat with GigFlow</string>
     <string name="previous">Forecast Your Pay</string>
 

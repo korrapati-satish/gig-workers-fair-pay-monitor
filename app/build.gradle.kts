@@ -45,4 +45,6 @@ dependencies {
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
     implementation(libs.mpandroid.chart)
+    implementation(libs.googlecode.gson)
+    implementation(libs.androidx.cardview)
 }
